@@ -7,8 +7,8 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
-// مسار حفظ الجلسة - Railway يوفر مساحة تخزين دائمة
-const sessionPath = path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || '', '.wwebjs_auth');
+// مسار حفظ الجلسة
+const sessionPath = path.join('/data', '.wwebjs_auth');
 
 // التأكد من وجود المجلد
 if (!fs.existsSync(sessionPath)) {
@@ -22,23 +22,24 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
+        executablePath: '/usr/bin/chromium',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-accelerated-2d-canvas'
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu'
         ]
     }
 });
 
 let qrCodeImageUrl = null;
 
-// صفحة الترحيب الرئيسية
+// الصفحة الرئيسية
 app.get('/', (req, res) => {
     res.send(`
-        <h1>WhatsApp API Server</h1>
-        <p>Status: Running</p>
+        <h1>WhatsApp API is Running</h1>
+        <p>Status: Active</p>
         <a href="/qrcode">View QR Code</a>
     `);
 });
@@ -54,10 +55,6 @@ client.on('authenticated', () => {
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Client is ready!');
-});
-
-client.on('auth_failure', (error) => {
-    console.error('❌ Authentication failed:', error);
 });
 
 app.post('/send', async (req, res) => {
@@ -91,12 +88,6 @@ app.get('/qrcode', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server is running on port ${PORT}`);
-});
-
-process.on('SIGTERM', async () => {
-    console.log('SIGTERM received. Closing client...');
-    await client.destroy();
-    process.exit(0);
 });
 
 client.initialize();
