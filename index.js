@@ -7,56 +7,47 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
-// مسار حفظ الجلسة
-const sessionPath = path.join('/data', '.wwebjs_auth');
+// ✅ حفظ الجلسة في مجلد مناسب لـ Railway
+const sessionPath = process.env.SESSION_PATH || path.join(process.env.HOME || process.env.USERPROFILE, '.wwebjs_auth');
 
-// التأكد من وجود المجلد
-if (!fs.existsSync(sessionPath)) {
-    fs.mkdirSync(sessionPath, { recursive: true });
-}
+// ✅ التحقق مما إذا كانت الجلسة محفوظة مسبقًا
+const isSessionSaved = fs.existsSync(sessionPath);
 
+// ✅ إعداد عميل WhatsApp مع ضبط Puppeteer للعمل على Railway
 const client = new Client({
     authStrategy: new LocalAuth({
-        clientId: "whatsapp-client",
         dataPath: sessionPath
     }),
     puppeteer: {
-        headless: true,
-        executablePath: '/usr/bin/chromium',
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable',
         args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--disable-gpu'
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--single-process"
         ]
     }
 });
 
+// ✅ متغير لتخزين QR Code كصورة
 let qrCodeImageUrl = null;
 
-// الصفحة الرئيسية
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>WhatsApp API is Running</h1>
-        <p>Status: Active</p>
-        <a href="/qrcode">View QR Code</a>
-    `);
-});
-
+// ✅ توليد QR Code إذا لم تكن الجلسة محفوظة
 client.on('qr', async (qr) => {
-    console.log("✅ QR Code generated");
-    qrCodeImageUrl = await qrcode.toDataURL(qr);
+    if (!isSessionSaved) {
+        console.log("✅ QR Code generated. Generating image...");
+        qrCodeImageUrl = await qrcode.toDataURL(qr);
+        console.log("✅ QR Code image generated. Scan it using your phone.");
+    }
 });
 
-client.on('authenticated', () => {
-    console.log('✅ Client authenticated');
-});
-
+// ✅ عند نجاح تسجيل الدخول
 client.on('ready', () => {
     console.log('✅ WhatsApp Client is ready!');
 });
 
+// ✅ API لإرسال رسالة
 app.post('/send', async (req, res) => {
     const { phone, message } = req.body;
 
@@ -72,22 +63,19 @@ app.post('/send', async (req, res) => {
     }
 });
 
+// ✅ API للحصول على QR Code كصورة
 app.get('/qrcode', (req, res) => {
     if (!qrCodeImageUrl) {
         return res.status(404).json({ success: false, error: "QR Code not generated yet." });
     }
-    res.send(`
-        <html>
-            <body style="display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-                <img src="${qrCodeImageUrl}" alt="QR Code" style="max-width: 300px;" />
-            </body>
-        </html>
-    `);
+    res.send(`<img src="${qrCodeImageUrl}" alt="QR Code" />`);
 });
 
-const PORT = process.env.PORT || 3000;
+// ✅ تشغيل السيرفر على المنفذ الصحيح لـ Railway
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
 
+// ✅ تهيئة عميل WhatsApp
 client.initialize();
