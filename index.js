@@ -1,26 +1,14 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 
-// مسار حفظ الجلسة
-const sessionPath = process.env.SESSION_PATH || path.join(__dirname, '.wwebjs_auth');
-
-// تحقق مما إذا كانت الجلسة محفوظة
-const isSessionSaved = fs.existsSync(sessionPath);
-
 // إعداد عميل WhatsApp
 const client = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: sessionPath // تحديد مسار حفظ الجلسة
-    }),
     puppeteer: {
         headless: true,
-        executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser', // المسار إلى Chromium
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
@@ -28,18 +16,11 @@ const client = new Client({
 // متغير لتخزين QR Code كصورة
 let qrCodeImageUrl = null;
 
-// توليد QR Code كصورة (فقط إذا لم تكن الجلسة محفوظة)
+// توليد QR Code عند بدء الجلسة
 client.on('qr', async (qr) => {
-    if (!isSessionSaved) {
-        console.log("✅ QR Code generated. Generating image...");
-
-        // إنشاء QR Code كصورة
-        const qrCodeImage = await qrcode.toDataURL(qr);
-        qrCodeImageUrl = qrCodeImage;
-
-        console.log("✅ QR Code image generated. Use the following URL to scan:");
-        console.log(qrCodeImageUrl); // هذا هو رابط الصورة
-    }
+    console.log("✅ QR Code generated. Generating image...");
+    qrCodeImageUrl = await qrcode.toDataURL(qr);
+    console.log("✅ Scan this QR Code:", qrCodeImageUrl);
 });
 
 // التأكد من أن العميل جاهز
@@ -63,7 +44,7 @@ app.post('/send', async (req, res) => {
     }
 });
 
-// API للحصول على QR Code كصورة
+// API للحصول على QR Code
 app.get('/qrcode', (req, res) => {
     if (!qrCodeImageUrl) {
         return res.status(404).json({ success: false, error: "QR Code not generated yet." });
