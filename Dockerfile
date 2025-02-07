@@ -2,10 +2,11 @@ FROM node:18.18.0
 
 WORKDIR /app
 
-COPY package.json .
-COPY package-lock.json .
-
+COPY package.json package-lock.json ./
 RUN npm install
+
+# تثبيت Chromium يدويًا
+RUN apt-get update && apt-get install -y chromium
 
 COPY . .
 
