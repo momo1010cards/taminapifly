@@ -31,9 +31,12 @@ client.on('qr', async (qr) => {
     console.log(qrCodeImageUrl); // هذا هو رابط الصورة
 });
 
-// التأكد من أن العميل جاهز
 client.on('ready', () => {
     console.log('✅ WhatsApp Client is ready!');
+});
+
+client.initialize().catch(err => {
+    console.error('❌ Failed to initialize WhatsApp client:', err);
 });
 
 // API لإرسال رسالة
