@@ -4,8 +4,7 @@
   "description": "Simple WhatsApp API using whatsapp-web.js",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "puppeteer install"
+    "start": "node index.js"
   },
   "engines": {
     "node": "18.18.0"
