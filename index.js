@@ -1,4 +1,4 @@
-const { Client, MemoryStore } = require('whatsapp-web.js');
+const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const express = require('express');
 const path = require('path');
@@ -9,7 +9,6 @@ app.use(express.json());
 
 // إعداد عميل WhatsApp
 const client = new Client({
-    authStrategy: new MemoryStore(), // تخزين الجلسة في الذاكرة
     puppeteer: {
         headless: true,
         executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser', // المسار إلى Chromium
