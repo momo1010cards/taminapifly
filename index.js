@@ -1,22 +1,25 @@
-const { Client } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const express = require('express');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 
-// إعداد عميل WhatsApp
+// إعداد عميل WhatsApp مع LocalAuth لحفظ الجلسة
 const client = new Client({
+    authStrategy: new LocalAuth(), // يحفظ الجلسة تلقائيًا
     puppeteer: {
         headless: true,
+        executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser', // التأكد من مسار Chromium
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
-// متغير لتخزين QR Code كصورة
+// متغير لتخزين QR Code
 let qrCodeImageUrl = null;
 
-// توليد QR Code عند بدء الجلسة
+// توليد QR Code عند الحاجة فقط
 client.on('qr', async (qr) => {
     console.log("✅ QR Code generated. Generating image...");
     qrCodeImageUrl = await qrcode.toDataURL(qr);
@@ -26,6 +29,11 @@ client.on('qr', async (qr) => {
 // التأكد من أن العميل جاهز
 client.on('ready', () => {
     console.log('✅ WhatsApp Client is ready!');
+});
+
+// التحقق من حالات الاتصال
+client.on('disconnected', (reason) => {
+    console.error('⚠️ Client disconnected:', reason);
 });
 
 // API لإرسال رسالة
