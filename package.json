@@ -4,16 +4,15 @@
   "description": "Simple WhatsApp API using whatsapp-web.js",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "build": "echo 'Building project...'",
-    "postinstall": "npm install --omit=dev"
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "18.18.0"
   },
   "dependencies": {
     "express": "^4.18.2",
     "qrcode": "^1.5.1",
-    "whatsapp-web.js": "^1.21.0"
-  },
-  "engines": {
-    "node": ">=16"
+    "whatsapp-web.js": "^1.21.0",
+    "puppeteer-core": "^19.0.0"
   }
 }
