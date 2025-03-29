@@ -1,3 +1,16 @@
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received. Closing server...');
+    server.close(() => {
+        console.log('Server closed');
+        client.destroy().then(() => {
+            console.log('WhatsApp client destroyed');
+            process.exit(0);
+        });
+    });
+});
+
+
+
 const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const express = require('express');
@@ -11,10 +24,20 @@ app.use(express.json());
 const client = new Client({
     puppeteer: {
         headless: true,
-        executablePath: process.env.CHROMIUM_PATH || require('puppeteer').executablePath(), 
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ]
     }
 });
+
 
 // متغير لتخزين QR Code كصورة
 let qrCodeImageUrl = null;
@@ -61,8 +84,7 @@ app.get('/qrcode', (req, res) => {
 });
 
 // تشغيل السيرفر
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
 
