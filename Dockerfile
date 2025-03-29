@@ -1,17 +1,22 @@
-FROM node:16
+FROM node:16-bullseye
 
 WORKDIR /app
+
+# تثبيت تبعيات النظام المطلوبة لـ Puppeteer
+RUN apt-get update && \
+    apt-get install -y \
+    chromium \
+    fonts-freefont-ttf \
+    libxss1 \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# تعيين متغيرات البيئة لـ Puppeteer
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 COPY package.json package-lock.json ./
 RUN npm install
 
-# تثبيت Chromium مع المكتبات الداعمة
-RUN apt-get update && apt-get install -y chromium-browser fonts-liberation libasound2
-
 COPY . .
-
-# تحديد المنفذ لاستخدامه مع fly.io
-ENV PORT=8080
-EXPOSE 8080
 
 CMD ["npm", "start"]
